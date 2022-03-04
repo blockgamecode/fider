@@ -31,7 +31,7 @@ var (
 	//NotificationEventNewPost is triggered when a new post is posted
 	NotificationEventNewPost = NotificationEvent{
 		UserSettingsKeyName:           "event_notification_new_post",
-		DefaultSettingValue:           strconv.Itoa(int(NotificationChannelWeb | NotificationChannelEmail)),
+		DefaultSettingValue:           strconv.Itoa(int(NotificationChannelWeb)),
 		RequiresSubscriptionUserRoles: []Role{},
 		DefaultEnabledUserRoles: []Role{
 			RoleAdministrator,
@@ -42,7 +42,7 @@ var (
 	//NotificationEventNewComment is triggered when a new comment is posted
 	NotificationEventNewComment = NotificationEvent{
 		UserSettingsKeyName: "event_notification_new_comment",
-		DefaultSettingValue: strconv.Itoa(int(NotificationChannelWeb | NotificationChannelEmail)),
+		DefaultSettingValue: strconv.Itoa(int(NotificationChannelWeb)),
 		RequiresSubscriptionUserRoles: []Role{
 			RoleVisitor,
 		},
@@ -55,7 +55,7 @@ var (
 	//NotificationEventChangeStatus is triggered when a new post has its status changed
 	NotificationEventChangeStatus = NotificationEvent{
 		UserSettingsKeyName: "event_notification_change_status",
-		DefaultSettingValue: strconv.Itoa(int(NotificationChannelWeb | NotificationChannelEmail)),
+		DefaultSettingValue: strconv.Itoa(int(NotificationChannelWeb)),
 		RequiresSubscriptionUserRoles: []Role{
 			RoleVisitor,
 		},

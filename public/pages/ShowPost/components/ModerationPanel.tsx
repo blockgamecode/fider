@@ -30,7 +30,7 @@ export const ModerationPanel = (props: ModerationPanelProps) => {
   }
 
   const status = PostStatus.Get(props.post.status)
-  if (!fider.session.isAuthenticated || !fider.session.user.isAdministrator || status.closed) {
+  if (!fider.session.isAuthenticated || !fider.session.user.isCollaborator || status.closed) {
     return null
   }
 

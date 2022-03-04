@@ -42,6 +42,7 @@ export const ShowTag = (props: TagProps) => {
       style={{
         backgroundColor: `#${props.tag.color}`,
         color: textColor(props.tag.color),
+        userSelect: "none",
       }}
     >
       {!props.tag.isPublic && !props.circular && (

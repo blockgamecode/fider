@@ -56,6 +56,14 @@ func CreatePost() web.HandlerFunc {
 			return c.Failure(err)
 		}
 
+		assignTags := make([]bus.Msg, len(action.Tags))
+		for i, tag := range action.Tags {
+			assignTags[i] = &cmd.AssignTag{Post: newPost.Result, Tag: tag}
+		}
+		if err = bus.Dispatch(c, assignTags...); err != nil {
+			return c.Failure(err)
+		}
+
 		c.Enqueue(tasks.NotifyAboutNewPost(newPost.Result))
 
 		metrics.TotalPosts.Inc()

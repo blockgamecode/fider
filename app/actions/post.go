@@ -22,6 +22,9 @@ type CreateNewPost struct {
 	Title       string             `json:"title"`
 	Description string             `json:"description"`
 	Attachments []*dto.ImageUpload `json:"attachments"`
+	Slugs       []string           `json:"tags"`
+
+	Tags []*entity.Tag
 }
 
 // IsAuthorized returns true if current user is authorized to perform this action
@@ -58,6 +61,16 @@ func (action *CreateNewPost) Validate(ctx context.Context, user *entity.User) *v
 	}
 	result.AddFieldFailure("attachments", messages...)
 
+	tags := make([]*entity.Tag, len(action.Slugs))
+	for i, slug := range action.Slugs {
+		getSlug := &query.GetTagBySlug{Slug: slug}
+		if err := bus.Dispatch(ctx, getSlug); err != nil {
+			return validate.Error(err)
+		}
+		tags[i] = getSlug.Result
+	}
+	action.Tags = tags
+
 	return result
 }
 
@@ -89,7 +102,7 @@ func (input *UpdatePost) IsAuthorized(ctx context.Context, user *entity.User) bo
 	}
 
 	timeAgo := time.Now().UTC().Sub(input.Post.CreatedAt)
-	return input.Post.User.ID == user.ID && timeAgo <= 1*time.Hour
+	return input.Post.User.ID == user.ID && timeAgo <= 6*time.Hour
 }
 
 // Validate if current model is valid
@@ -222,7 +235,7 @@ type DeletePost struct {
 
 // IsAuthorized returns true if current user is authorized to perform this action
 func (action *DeletePost) IsAuthorized(ctx context.Context, user *entity.User) bool {
-	return user != nil && user.IsAdministrator()
+	return user != nil && user.IsCollaborator()
 }
 
 // Validate if current model is valid

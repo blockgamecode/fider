@@ -57,7 +57,7 @@ const canEditPost = (user: CurrentUser, post: Post) => {
     return true
   }
 
-  return user.id === post.user.id && timeAgo(post.createdAt) <= oneHour
+  return user.id === post.user.id && timeAgo(post.createdAt) <= oneHour * 6
 }
 
 export default class ShowPostPage extends React.Component<ShowPostPageProps, ShowPostPageState> {

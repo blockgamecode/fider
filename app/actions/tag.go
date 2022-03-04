@@ -102,20 +102,24 @@ type AssignUnassignTag struct {
 	Post *entity.Post
 }
 
-// IsAuthorized returns true if current user is authorized to perform this action
-func (action *AssignUnassignTag) IsAuthorized(ctx context.Context, user *entity.User) bool {
-	return user != nil && user.IsCollaborator()
-}
-
-// Validate if current model is valid
-func (action *AssignUnassignTag) Validate(ctx context.Context, user *entity.User) *validate.Result {
+func (action *AssignUnassignTag) OnPreExecute(ctx context.Context) error {
 	getPost := &query.GetPostByNumber{Number: action.Number}
 	getSlug := &query.GetTagBySlug{Slug: action.Slug}
 	if err := bus.Dispatch(ctx, getPost, getSlug); err != nil {
-		return validate.Error(err)
+		return err
 	}
 
 	action.Post = getPost.Result
 	action.Tag = getSlug.Result
+	return nil
+}
+
+// IsAuthorized returns true if current user is authorized to perform this action
+func (action *AssignUnassignTag) IsAuthorized(ctx context.Context, user *entity.User) bool {
+	return user != nil && (user.IsCollaborator() || action.Post.User.ID == user.ID)
+}
+
+// Validate if current model is valid
+func (action *AssignUnassignTag) Validate(ctx context.Context, user *entity.User) *validate.Result {
 	return validate.Success()
 }

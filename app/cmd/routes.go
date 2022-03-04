@@ -200,6 +200,9 @@ func routes(r *web.Engine) *web.Engine {
 		membersApi.Post("/api/v1/posts/:number/subscription", apiv1.Subscribe())
 		membersApi.Delete("/api/v1/posts/:number/subscription", apiv1.Unsubscribe())
 
+		membersApi.Post("/api/v1/posts/:number/tags/:slug", apiv1.AssignTag())
+		membersApi.Delete("/api/v1/posts/:number/tags/:slug", apiv1.UnassignTag())
+
 		membersApi.Use(middlewares.IsAuthorized(enum.RoleCollaborator, enum.RoleAdministrator))
 		membersApi.Put("/api/v1/posts/:number/status", apiv1.SetResponse())
 	}
@@ -217,9 +220,7 @@ func routes(r *web.Engine) *web.Engine {
 		staffApi.Post("/api/v1/invitations/send", apiv1.SendInvites())
 		staffApi.Post("/api/v1/invitations/sample", apiv1.SendSampleInvite())
 
-		staffApi.Use(middlewares.BlockLockedTenants())
-		staffApi.Post("/api/v1/posts/:number/tags/:slug", apiv1.AssignTag())
-		staffApi.Delete("/api/v1/posts/:number/tags/:slug", apiv1.UnassignTag())
+		staffApi.Delete("/api/v1/posts/:number", apiv1.DeletePost())
 	}
 
 	// Operations used to manage a site
@@ -234,9 +235,6 @@ func routes(r *web.Engine) *web.Engine {
 		adminApi.Post("/api/v1/tags", apiv1.CreateEditTag())
 		adminApi.Put("/api/v1/tags/:slug", apiv1.CreateEditTag())
 		adminApi.Delete("/api/v1/tags/:slug", apiv1.DeleteTag())
-
-		adminApi.Use(middlewares.BlockLockedTenants())
-		adminApi.Delete("/api/v1/posts/:number", apiv1.DeletePost())
 	}
 
 	return r

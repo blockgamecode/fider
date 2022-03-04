@@ -17,7 +17,8 @@ interface TagsPanelProps {
 
 export const TagsPanel = (props: TagsPanelProps) => {
   const fider = useFider()
-  const canEdit = fider.session.isAuthenticated && fider.session.user.isCollaborator && props.tags.length > 0
+  const canEdit = fider.session.isAuthenticated && (fider.session.user.isCollaborator || 
+    fider.session.user.id == props.post.user.id) && props.tags.length > 0
 
   const [isEditing, setIsEditing] = useState(false)
   const [assignedTags, setAssignedTags] = useState(props.tags.filter((t) => props.post.tags.indexOf(t.slug) >= 0))
