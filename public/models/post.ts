@@ -74,7 +74,7 @@ export interface Vote {
   user: {
     id: number
     name: string
-    email: string
+    email?: string
     avatarURL: string
   }
 }

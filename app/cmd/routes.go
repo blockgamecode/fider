@@ -128,8 +128,8 @@ func routes(r *web.Engine) *web.Engine {
 		ui.Post("/_api/notifications/read-all", handlers.ReadAllNotifications())
 		ui.Get("/_api/notifications/unread/total", handlers.TotalUnreadNotifications())
 
-		// From this step, only Collaborators and Administrators are allowed
-		ui.Use(middlewares.IsAuthorized(enum.RoleCollaborator, enum.RoleAdministrator))
+		// From this step, only Administrators are allowed
+		ui.Use(middlewares.IsAuthorized(enum.RoleAdministrator))
 
 		// locale is forced to English for administrative pages.
 		// This is meant to be removed when all pages are translated.
@@ -143,9 +143,6 @@ func routes(r *web.Engine) *web.Engine {
 		ui.Get("/admin/tags", handlers.ManageTags())
 		ui.Get("/admin/authentication", handlers.ManageAuthentication())
 		ui.Get("/_api/admin/oauth/:provider", handlers.GetOAuthConfig())
-
-		//From this step, only Administrators are allowed
-		ui.Use(middlewares.IsAuthorized(enum.RoleAdministrator))
 
 		ui.Get("/admin/export", handlers.Page("Export · Site Settings", "", "Administration/pages/Export.page"))
 		ui.Get("/admin/export/posts.csv", handlers.ExportPostsToCSV())

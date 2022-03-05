@@ -15,7 +15,7 @@ export const UserMenu = () => {
         </Dropdown.ListItem>
         <Dropdown.Divider />
 
-        {fider.session.user.isCollaborator && (
+        {fider.session.user.isAdministrator && (
           <>
             <div className="p-2 text-medium uppercase">
               <Trans id="menu.administration">Administration</Trans>

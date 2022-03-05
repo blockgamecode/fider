@@ -71,7 +71,7 @@ export const VotesModal: React.FC<VotesModalProps> = (props) => {
                     <Avatar user={x.user} />
                     <VStack spacing={0}>
                       <UserName user={x.user} />
-                      <span className="text-muted">{x.user.email}</span>
+                      {x.user.email && <span className="text-muted">{x.user.email}</span>}
                     </VStack>
                   </HStack>
                   <span className="text-muted">
