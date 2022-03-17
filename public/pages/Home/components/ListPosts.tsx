@@ -22,8 +22,10 @@ const ListPostItem = (props: { post: Post; user?: CurrentUser; tags: Tag[] }) =>
             {props.post.title}
           </a>
           {props.post.commentsCount > 0 && (
-            <HStack className="text-muted">
-              {props.post.commentsCount} <Icon sprite={IconChatAlt2} className="h-4 ml-1" />
+            <HStack>
+              <a className="flex align-center text-muted hover:text-primary-base" href={`/posts/${props.post.number}/${props.post.slug}`}>
+                {props.post.commentsCount} <Icon sprite={IconChatAlt2} className="h-4 ml-1" />
+              </a>
             </HStack>
           )}
         </HStack>
