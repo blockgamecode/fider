@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net"
 	"net/http"
 	"strings"
 
@@ -43,15 +44,14 @@ func getDefaultTLSConfig(autoSSL bool) *tls.Config {
 var errInvalidHostName = errors.New("autotls: invalid hostname")
 
 func isValidHostName(ctx context.Context, host string) error {
-	if host == "" {
-		return errors.Wrap(errInvalidHostName, "host cannot be empty.")
-	}
+	// In this context, host can only be custom domains, not a subdomain of fider.io
 
 	if env.IsSingleHostMode() {
-		if env.Config.HostDomain == host {
-			return nil
-		}
-		return errors.Wrap(errInvalidHostName, "server name mismatch")
+		return nil
+	}
+
+	if host == "" {
+		return errors.Wrap(errInvalidHostName, "host cannot be empty.")
 	}
 
 	trx, err := dbx.BeginTx(ctx)
@@ -59,16 +59,30 @@ func isValidHostName(ctx context.Context, host string) error {
 		return errors.Wrap(err, "failed start new transaction")
 	}
 	defer trx.MustCommit()
+	dbCtx := context.WithValue(ctx, app.TransactionCtxKey, trx)
 
-	isAvailable := &query.IsCNAMEAvailable{CNAME: host}
-	newCtx := context.WithValue(ctx, app.TransactionCtxKey, trx)
-	if err := bus.Dispatch(newCtx, isAvailable); err != nil {
-		return errors.Wrap(err, "failed to find tenant by cname")
+	getTenant := &query.GetTenantByDomain{Domain: host}
+	err = bus.Dispatch(dbCtx, getTenant)
+	if err != nil {
+		if errors.Cause(err) == app.ErrNotFound {
+			return errors.Wrap(errInvalidHostName, "no tenant found with cname %s", host)
+		}
+		return errors.Wrap(err, "failed to get tenant by cname")
 	}
 
-	if isAvailable.Result {
-		return errors.Wrap(errInvalidHostName, "no tenants found with cname %s", host)
+	cname, err := net.DefaultResolver.LookupCNAME(ctx, host)
+	if err != nil {
+		return errors.Wrap(err, "failed to lookup CNAME")
 	}
+
+	if cname == "" {
+		return errors.Wrap(errInvalidHostName, "no CNAME DNS record found for %s", host)
+	}
+
+	if strings.TrimSuffix(cname, ".") != getTenant.Result.Subdomain+env.MultiTenantDomain() {
+		return errors.Wrap(errInvalidHostName, "cname %s (from %s) doesn't match configured host %s", cname, host, getTenant.Result.Subdomain+env.MultiTenantDomain())
+	}
+
 	return nil
 }
 
@@ -128,6 +142,11 @@ func (m *CertificateManager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Ce
 			return &m.cert, nil
 		}
 
+		// If it's an IP address, just return the cert we have
+		if net.ParseIP(serverName) != nil {
+			return &m.cert, nil
+		}
+
 		// throw an error if it doesn't match the leaf certificate but still ends with current hostname, example:
 		// hostdomain is myserver.com and the certificate is *.myserver.com
 		// serverName is something.else.myserver.com, it should throw an error
@@ -136,9 +155,14 @@ func (m *CertificateManager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Ce
 		}
 	}
 
+	//TODO: consider recovering from a possible panic here
 	cert, err := m.autotls.GetCertificate(hello)
-	if err != nil && errors.Cause(err) != errInvalidHostName {
-		log.Error(m.ctx, err)
+	if err != nil {
+		if errors.Cause(err) == errInvalidHostName {
+			log.Warn(m.ctx, err.Error())
+		} else {
+			log.Error(m.ctx, errors.Wrap(err, "failed to get certificate for %s", hello.ServerName))
+		}
 	}
 
 	return cert, err

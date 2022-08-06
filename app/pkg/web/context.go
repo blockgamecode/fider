@@ -28,8 +28,8 @@ import (
 	"github.com/getfider/fider/app/services/blob"
 )
 
-// Map defines a generic map of type `map[string]interface{}`
-type Map map[string]interface{}
+// Map defines a generic map of type `map[string]any`
+type Map map[string]any
 
 // StringMap defines a map of type `map[string]string`
 type StringMap map[string]string
@@ -169,7 +169,7 @@ func (c *Context) SetTenant(tenant *entity.Tenant) {
 }
 
 //Bind context values into given model
-func (c *Context) Bind(i interface{}) error {
+func (c *Context) Bind(i any) error {
 	err := c.engine.binder.Bind(i, c)
 	if err != nil {
 		return errors.Wrap(err, "failed to bind request to model")
@@ -306,7 +306,7 @@ func (c *Context) Attachment(fileName, contentType string, file []byte) error {
 }
 
 //Ok returns 200 OK with JSON result
-func (c *Context) Ok(data interface{}) error {
+func (c *Context) Ok(data any) error {
 	return c.JSON(http.StatusOK, data)
 }
 
@@ -433,7 +433,7 @@ func (c *Context) GetMatchedRoutePath() string {
 }
 
 // Set saves data in the context.
-func (c *Context) Set(key interface{}, val interface{}) {
+func (c *Context) Set(key any, val any) {
 	c.Context = context.WithValue(c.Context, key, val)
 }
 
@@ -448,7 +448,7 @@ func (c *Context) XML(code int, text string) error {
 }
 
 // JSON returns a JSON response with status code.
-func (c *Context) JSON(code int, i interface{}) error {
+func (c *Context) JSON(code int, i any) error {
 	b, err := json.Marshal(i)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal response to JSON")
@@ -469,11 +469,16 @@ func (c *Context) Blob(code int, contentType string, b []byte) error {
 	if code >= 400 {
 		c.Response.Header().Set("Cache-Control", "no-cache, no-store")
 	}
-	c.Response.Header().Set("Content-Type", contentType)
 
+	c.Response.Header().Set("Content-Type", contentType)
 	c.Response.WriteHeader(code)
+
 	_, err := c.Response.Write(b)
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed to write response")
+	}
+
+	return nil
 }
 
 // NoContent sends a response with no body and a status code.
@@ -525,12 +530,11 @@ func (c *Context) SetCanonicalURL(rawurl string) {
 
 //TenantBaseURL returns base URL for a given tenant
 func TenantBaseURL(ctx context.Context, tenant *entity.Tenant) string {
-	request := ctx.Value(app.RequestCtxKey).(Request)
-
 	if env.IsSingleHostMode() {
-		return request.BaseURL()
+		return BaseURL(ctx)
 	}
 
+	request := ctx.Value(app.RequestCtxKey).(Request)
 	address := request.URL.Scheme + "://"
 	if tenant.CNAME != "" {
 		address += tenant.CNAME
@@ -546,17 +550,24 @@ func TenantBaseURL(ctx context.Context, tenant *entity.Tenant) string {
 }
 
 // AssetsURL return the full URL to a tenant-specific static asset
-func AssetsURL(ctx context.Context, path string, a ...interface{}) string {
+// It should always return an absolute URL
+func AssetsURL(ctx context.Context, path string, a ...any) string {
 	request := ctx.Value(app.RequestCtxKey).(Request)
-	tenant, hasTenant := ctx.Value(app.TenantCtxKey).(*entity.Tenant)
 	path = fmt.Sprintf(path, a...)
-	if env.Config.CDN.Host != "" && hasTenant {
-		if env.IsSingleHostMode() {
+
+	if env.IsSingleHostMode() {
+		if env.Config.CDN.Host != "" {
 			return request.URL.Scheme + "://" + env.Config.CDN.Host + path
 		}
+		return BaseURL(ctx) + path
+	}
+
+	tenant, hasTenant := ctx.Value(app.TenantCtxKey).(*entity.Tenant)
+	if env.Config.CDN.Host != "" && hasTenant {
 		return request.URL.Scheme + "://" + tenant.Subdomain + "." + env.Config.CDN.Host + path
 	}
-	return request.BaseURL() + path
+
+	return BaseURL(ctx) + path
 }
 
 // LogoURL return the full URL to the tenant-specific logo URL
@@ -570,6 +581,10 @@ func LogoURL(ctx context.Context) string {
 
 // BaseURL return the base URL from given context
 func BaseURL(ctx context.Context) string {
+	if env.IsSingleHostMode() {
+		return env.Config.BaseURL
+	}
+
 	request, ok := ctx.Value(app.RequestCtxKey).(Request)
 	if ok {
 		return request.BaseURL()

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/getfider/fider/app/models/cmd"
+	"github.com/getfider/fider/app/models/dto"
 	"github.com/getfider/fider/app/models/entity"
 	"github.com/getfider/fider/app/models/enum"
 
@@ -102,7 +104,8 @@ func OAuthToken() web.HandlerFunc {
 		}
 		if err != nil {
 			if errors.Cause(err) == app.ErrNotFound {
-				if c.Tenant().IsPrivate {
+				isTrusted := isTrustedOAuthProvider(c, provider)
+				if c.Tenant().IsPrivate && !isTrusted {
 					return c.Redirect("/not-invited")
 				}
 
@@ -141,6 +144,15 @@ func OAuthToken() web.HandlerFunc {
 	}
 }
 
+func isTrustedOAuthProvider(ctx context.Context, provider string) bool {
+	customOAuthConfigByProvider := &query.GetCustomOAuthConfigByProvider{Provider: provider}
+	err := bus.Dispatch(ctx, customOAuthConfigByProvider)
+	if err != nil {
+		return false
+	}
+	return customOAuthConfigByProvider.Result.IsTrusted
+}
+
 // OAuthCallback handles the redirect back from the OAuth provider
 // This callback can run on either Tenant or Login address
 // If the request is for a sign in, we redirect the user to the tenant address
@@ -152,6 +164,11 @@ func OAuthCallback() web.HandlerFunc {
 		provider := c.Param("provider")
 		state := c.QueryParam("state")
 		parts := strings.Split(state, "|")
+
+		if parts[0] == "" {
+			log.Warnf(c, "Missing redirect URL in OAuth callback state for provider @{Provider}.", dto.Props{"Provider": provider})
+			return c.NotFound()
+		}
 
 		redirectURL, err := url.ParseRequestURI(parts[0])
 		if err != nil {
