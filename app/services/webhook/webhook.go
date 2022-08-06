@@ -47,7 +47,7 @@ func testWebhook(ctx context.Context, c *cmd.TestWebhook) error {
 		return err
 	}
 
-	c.Result, err = triggerWebhook(ctx, webhook_.Result, dummyTriggerProps(ctx, webhook_.Result.Type))
+	c.Result, err = triggerWebhook(ctx, webhook_.Result, dummyTriggerProps(ctx, webhook_.Result.Type), true)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func triggerWebhooks(ctx context.Context, c *cmd.TriggerWebhooks) error {
 	}
 
 	for _, webhook_ := range webhooks.Result {
-		_, err = triggerWebhook(ctx, webhook_, c.Props)
+		_, err = triggerWebhook(ctx, webhook_, c.Props, false)
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,7 @@ func triggerWebhooks(ctx context.Context, c *cmd.TriggerWebhooks) error {
 	return nil
 }
 
-func triggerWebhook(ctx context.Context, webhook *entity.Webhook, props webhook.Props) (*dto.WebhookTriggerResult, error) {
+func triggerWebhook(ctx context.Context, webhook *entity.Webhook, props webhook.Props, test bool) (*dto.WebhookTriggerResult, error) {
 	result := &dto.WebhookTriggerResult{Webhook: webhook, Props: props}
 	var err error
 
@@ -98,7 +98,12 @@ func triggerWebhook(ctx context.Context, webhook *entity.Webhook, props webhook.
 		return resultWithError(ctx, "Could not execute webhook HTTP request", err.Error(), result)
 	}
 	result.StatusCode = httpRequest.ResponseStatusCode
-	if result.StatusCode >= http.StatusBadRequest {
+
+	// Sometimes Discord webhooks just fail mysteriously
+	// And we don't want that to turn off webhooks until manually turning them back on
+	// Essentially, they should just keep working..
+	// So the `&& test` check is ugly but does the job for us
+	if result.StatusCode >= http.StatusBadRequest && test {
 		fullResponse := fmt.Sprintf("%d %s:\n%s", result.StatusCode, http.StatusText(result.StatusCode), httpRequest.ResponseBody)
 		return resultWithError(ctx, "Webhook HTTP request returned an error response code", fullResponse, result)
 	}
