@@ -18,25 +18,29 @@ var (
 	PostDuplicate PostStatus = 5
 	//PostDeleted is used when the post is completely removed from the site and should never be shown again
 	PostDeleted PostStatus = 6
+	//PostConsidered is used when the post is being considered by the team
+	PostConsidered PostStatus = 7
 )
 var postStatusIDs = map[PostStatus]string{
-	PostOpen:      "open",
-	PostStarted:   "started",
-	PostCompleted: "completed",
-	PostDeclined:  "declined",
-	PostPlanned:   "planned",
-	PostDuplicate: "duplicate",
-	PostDeleted:   "deleted",
+	PostOpen:       "open",
+	PostStarted:    "started",
+	PostCompleted:  "completed",
+	PostDeclined:   "declined",
+	PostPlanned:    "planned",
+	PostDuplicate:  "duplicate",
+	PostDeleted:    "deleted",
+	PostConsidered: "considered",
 }
 
 var postStatusNames = map[string]PostStatus{
-	"open":      PostOpen,
-	"started":   PostStarted,
-	"completed": PostCompleted,
-	"declined":  PostDeclined,
-	"planned":   PostPlanned,
-	"duplicate": PostDuplicate,
-	"deleted":   PostDeleted,
+	"open":       PostOpen,
+	"started":    PostStarted,
+	"completed":  PostCompleted,
+	"declined":   PostDeclined,
+	"planned":    PostPlanned,
+	"duplicate":  PostDuplicate,
+	"deleted":    PostDeleted,
+	"considered": PostConsidered,
 }
 
 // MarshalText returns the Text version of the post status

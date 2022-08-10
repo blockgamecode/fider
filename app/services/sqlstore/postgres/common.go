@@ -27,6 +27,7 @@ func getViewData(view string) (string, []enum.PostStatus, string) {
 	statuses := []enum.PostStatus{
 		enum.PostOpen,
 		enum.PostStarted,
+		enum.PostConsidered,
 		enum.PostPlanned,
 	}
 	switch view {
@@ -39,6 +40,9 @@ func getViewData(view string) (string, []enum.PostStatus, string) {
 		sort = "votes_count"
 	case "most-discussed":
 		sort = "comments_count"
+	case "considered":
+		sort = "response_date"
+		statuses = []enum.PostStatus{enum.PostConsidered}
 	case "planned":
 		sort = "response_date"
 		statuses = []enum.PostStatus{enum.PostPlanned}
@@ -56,6 +60,7 @@ func getViewData(view string) (string, []enum.PostStatus, string) {
 		statuses = []enum.PostStatus{
 			enum.PostOpen,
 			enum.PostStarted,
+			enum.PostConsidered,
 			enum.PostPlanned,
 			enum.PostCompleted,
 			enum.PostDeclined,

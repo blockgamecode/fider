@@ -33,6 +33,7 @@
   "enum.poststatus.started": "Started",
   "enum.poststatus.completed": "Completed",
   "enum.poststatus.declined": "Declined",
+  "enum.poststatus.considered": "Considered",
   "enum.poststatus.planned": "Planned",
   "enum.poststatus.duplicate": "Duplicate",
   "enum.poststatus.deleted": "Deleted",

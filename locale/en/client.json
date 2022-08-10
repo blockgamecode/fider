@@ -17,6 +17,7 @@
   "enum.poststatus.duplicate": "Duplicate",
   "enum.poststatus.open": "Open",
   "enum.poststatus.planned": "Planned",
+  "enum.poststatus.considered": "Considered",
   "enum.poststatus.started": "Started",
   "error.expired.text": "The link you clicked has expired.",
   "error.expired.title": "Expired",
