@@ -32,7 +32,7 @@ RUN make build-ui
 ################
 ### Runtime Step
 ################
-FROM --platform=${TARGETPLATFORM:-linux/amd64} debian:buster-slim
+FROM --platform=${TARGETPLATFORM:-linux/amd64} debian:trixie-slim
 
 RUN apt-get update
 RUN apt-get install -y ca-certificates
